@@ -65,7 +65,7 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
     if type(max_path_length) != int:
         raise TypeError("'max_path_length' must be 'int' type!")
     ## ------- end check parameters ------------
-    
+
     from collections import deque
     def toposort(adj) -> List[int]:
         Q = deque()
@@ -82,6 +82,7 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
                 cnt[j] -= 1
                 if cnt[j] == 0: res.append(j)
         return res
+
     FDNodes: List[FCI.Node] = []
     NodeId: Dict[str, int] = {}
     attr_id = []
@@ -138,11 +139,8 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
                 cur_id += 1
             adj[src].add(dest)
             anc[dest].add(src)
-        else:
-            # TODO: depends on more than one params: should be treated the same as bgKnowledge
-            pass
     topo = toposort(adj)
-    
+
     fake_knowledge = BackgroundKnowledge()
     skeleton_knowledge = set()
     for t in topo[::-1]:
@@ -170,14 +168,14 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
     FDgraph, FD_sep_sets = FCI.fas(dataset, GfdNodes, independence_test_method=independence_test_method, alpha=alpha,
                           knowledge=None, depth=depth, verbose=verbose)
     print("FDGraph:", FDgraph, FD_sep_sets)
-    
+
     # S = S join fas(dataset, GV)
     nodes = []
     for i in range(dataset.shape[1]):
         node = FCI.GraphNode(f"X{i + 1}")
         node.add_attribute("id", i)
         nodes.append(node)
-        
+
     for i in range(FDgraph.graph.shape[0]):
         for j in range(i):
             if FDgraph.graph[i, j] == -1:
@@ -187,12 +185,12 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
             #     fake_knowledge.add_required_by_node(node[x], node[y])
             # if FDgraph.graph[j, i] == -1:
             #     fake_knowledge.add_required_by_node(node[y], node[x])
-    
+
     print("fake_knowledge =", fake_knowledge)
     print(skeleton_knowledge)
     # for k in fake_knowledge.required_rules_specs:
     #     print(k[0].get_all_attributes(), k[1].get_all_attributes())
-    
+
     for funcDep in functional_dependencies:
         for p in funcDep.params:
             background_knowledge.add_required_by_node(nodes[f_ind[p.fid]], nodes[f_ind[funcDep.fid]])
@@ -204,7 +202,7 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
         print(u, v)
         graph.add_edge(FCI.Edge(nodes[u], nodes[v], FCI.Endpoint.TAIL, FCI.Endpoint.TAIL))
         # graph[u, v] = graph[v, u] = -1
-    
+
     print("global fas graph =", graph)
     print({u: s for u, s in sep_sets.items() if len(s)})
     # return graph, sep_sets
@@ -214,7 +212,7 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
     # forbid_knowledge.tier_map = background_knowledge.tier_map
     # forbid_knowledge.tier_value_map = background_knowledge.tier_value_map
     # background_knowledge = forbid_knowledge
-    
+
     # reorient all edges with CIRCLE Endpoint
     ori_edges = graph.get_graph_edges()
     for ori_edge in ori_edges:
@@ -278,7 +276,7 @@ def xlearn(dataset: np.ndarray, independence_test_method: str=FCI.fisherz, alpha
     graph.set_pag(True)
 
     edges = FCI.get_color_edges(graph)
-    
+
     return graph, edges
 
 
@@ -341,11 +339,13 @@ class XLearner(AlgoInterface):
         # common.checkLinearCorr(array)
         print(array, array.min(), array.max())
         self.G, self.edges = fci(array, **params.__dict__, background_knowledge=None, cache_path=self.__class__.cache_path, verbose=self.__class__.verbose)
-        
+
         # if bgKnowledges and len(bgKnowledges) > 0:
         f_ind = {fid: i for i, fid in enumerate(focusedFields)}
-        bk = self.constructBgKnowledgePag(bgKnowledgesPag=bgKnowledgesPag if bgKnowledgesPag else [], f_ind=f_ind)
-            
+        bk = self.constructBgKnowledgePag(
+            bgKnowledgesPag=bgKnowledgesPag or [], f_ind=f_ind
+        )
+
         self.G, self.edges = xlearn(array, **params.__dict__, background_knowledge=bk, functional_dependencies=funcDeps, f_ind=f_ind, fields=focusedFields, cache_path=self.__class__.cache_path, verbose=self.__class__.verbose)
         l = self.G.graph.tolist()
         return {

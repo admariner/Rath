@@ -71,7 +71,7 @@ class ExactSearch(AlgoInterface):
             use_k_cycle_heuristic=params.use_k_cycle_heuristic,
             k=params.k,
             verbose=self.__class__.verbose,
-            max_parents=params.maxP if params.maxP else None,
+            max_parents=params.maxP or None,
         )
         self.pag = np.zeros_like(self.dag_est)
         n = self.dag_est.shape[0]
@@ -80,7 +80,7 @@ class ExactSearch(AlgoInterface):
                 if self.dag_est[i, j]:
                     self.pag[i, j] = -1
                     self.pag[j, i] = 1
-    
+
         l = self.dag_est.tolist()
         pag = self.pag.tolist()
         return {

@@ -33,8 +33,7 @@ def inferDiff(s0, s1):
     if (s0 == s1).all():
         return s0
     join = s0 & s1
-    if (join == s0).all(): return s0
-    else: return s0 ^ s1
+    return s0 if (join == s0).all() else s0 ^ s1
         
 
 def compare(a: IDoWhy.IFilter, b: IDoWhy.IFilter):
@@ -129,8 +128,9 @@ def inferInfo(session: ExplainDataSession):
     self = session.estimate
     if self.target_estimand is None:
         return "Estimation failed! No relevant identified estimand available for this estimation method."
-    s = ''
-    s += "\n## Identified estimand\n{0}".format(self.target_estimand.__str__(only_target_estimand=True))
+    s = '' + "\n## Identified estimand\n{0}".format(
+        self.target_estimand.__str__(only_target_estimand=True)
+    )
     s += "\n## Realized estimand\n{0}".format(self.realized_estimand_expr)
     if hasattr(self, "estimator"):
         s += "\nTarget units: {0}\n".format(self.estimator.target_units_tostr())
@@ -150,8 +150,8 @@ def inferInfo(session: ExplainDataSession):
         s += str(self.conditional_estimates)
     if self.effect_strength is not None:
         s += "\n## Effect Strength\n"
-        s += "Change in outcome attributable to treatment: {}\n".format(self.effect_strength["fraction-effect"])
-        # s += "Variance in outcome explained by treatment: {}\n".format(self.effect_strength["r-squared"])
+        s += f'Change in outcome attributable to treatment: {self.effect_strength["fraction-effect"]}\n'
+            # s += "Variance in outcome explained by treatment: {}\n".format(self.effect_strength["r-squared"])
     return s
 
 import algorithms
@@ -290,19 +290,19 @@ def ExplainData(props: IDoWhy.IRInsightExplainProps) -> tp.List[IDoWhy.IRInsight
             responsibility=session.estimate.value
         ))
     except Exception as e:
-        print(str(e), file=sys.stderr)
-    
+        print(e, file=sys.stderr)
+
     results.extend(explainData(props))
-    
+
     sum2 = 0.
     for res in results:
         sum2 += res.responsibility * res.responsibility
     vars = math.sqrt(sum2 / len(results))
     for res in results:
         res.responsibility = significance_value(res.responsibility, vars)
-    
+
     print("results =", results)
-    
+
     return IDoWhy.IRInsightExplainResult(
         causalEffects=results
     )

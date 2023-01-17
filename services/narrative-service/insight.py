@@ -19,33 +19,30 @@ VectorObj = List[object]
 def func_residuals(x:VectorNum, alpha:float, beta:float)->VectorNum:
     return alpha*(x**-beta)
 
-def func_aggr(subDataSource:object,breakdown:VectorStr,aggrType:str)->object:
+def func_aggr(subDataSource:object,breakdown:VectorStr,aggrType:str) -> object:
     aggr_mark = False
-    if breakdown is not None:
-        if len(breakdown) > 0:
-            if aggrType=='sum':
-                groupData = subDataSource.groupby(breakdown).sum()
-            elif aggrType=='count':
-                groupData = subDataSource.groupby(breakdown).count()
-            elif aggrType=='mean':
-                groupData = subDataSource.groupby(breakdown).mean()
-            elif aggrType=='max':
-                groupData = subDataSource.groupby(breakdown).max()
-            elif aggrType=='min':
-                groupData = subDataSource.groupby(breakdown).min()
-            elif aggrType=='median':
-                groupData = subDataSource.groupby(breakdown).median()
-            aggr_mark = True
-        else:
-            groupData = subDataSource
+    if breakdown is not None and len(breakdown) > 0:
+        if aggrType == 'count':
+            groupData = subDataSource.groupby(breakdown).count()
+        elif aggrType == 'max':
+            groupData = subDataSource.groupby(breakdown).max()
+        elif aggrType == 'mean':
+            groupData = subDataSource.groupby(breakdown).mean()
+        elif aggrType == 'median':
+            groupData = subDataSource.groupby(breakdown).median()
+        elif aggrType == 'min':
+            groupData = subDataSource.groupby(breakdown).min()
+        elif aggrType == 'sum':
+            groupData = subDataSource.groupby(breakdown).sum()
+        aggr_mark = True
     else:
         groupData = subDataSource
     return groupData,aggr_mark
 
-def cal_2DClustering(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_2DClustering(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
-    whitened = whiten(groupData[measures[0:2]])
+    whitened = whiten(groupData[measures[:2]])
     if np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
         score = 0
         para = {}
@@ -74,10 +71,10 @@ def cal_2DClustering(breakdown:VectorStr,measures:VectorStr,subDataSource:object
         }
     return score,para
 
-def cal_CrossMeasureCorrelation(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_CrossMeasureCorrelation(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
-    whitened = whiten(groupData[measures[0:2]])
+    whitened = whiten(groupData[measures[:2]])
     if np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
         score = 0
         para = {}
@@ -98,17 +95,15 @@ def cal_CrossMeasureCorrelation(breakdown:VectorStr,measures:VectorStr,subDataSo
     return score,para
 
 def cal_Correlation(subspaces:VectorObj,subspaces_name:VectorStr,breakdown:VectorStr,\
-                    measures:VectorStr,aggrType:str,langType:str)->Tuple[float,dict]:
+                    measures:VectorStr,aggrType:str,langType:str) -> Tuple[float,dict]:
     # subspaces-2 spaces,measures-1 measures
     groupAggr = [func_aggr(i,breakdown,aggrType) for i in subspaces]
     groupData = [i[0] for i in groupAggr]
     group_index = [i for i in groupData[0].index if i in groupData[1].index]
     groupData_com = [i.loc[group_index] for i in groupData]
-    para = {}
     x = groupData_com[0][measures[0]].values
     y = groupData_com[1][measures[0]].values
-    para['x'] = x
-    para['y'] = y
+    para = {'x': x, 'y': y}
     if np.std(x)==0 or np.std(y)==0:
         score = 0
     else:
@@ -121,20 +116,16 @@ def cal_Correlation(subspaces:VectorObj,subspaces_name:VectorStr,breakdown:Vecto
                 explain = explain_Correlation(langType,subspaces_name[0],subspaces_name[1],aggrType,breakdown[0])
                 # explain = 'There is correlation between '+subspaces_name[0]+' and '+subspaces_name[1]+' after '+aggrType+' with '+breakdown[0]
                 para['explain'] = explain
-            if pccs<0:
-                para['sign'] = -1
-            else:
-                para['sign'] = 1
+            para['sign'] = -1 if pccs<0 else 1
     return score,para
 
-def cal_Attribution(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_Attribution(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     persent_list = groupData[measures[0]].values
     arg_index = np.argsort(-persent_list)
     first_persent = persent_list[arg_index[0]]/np.sum(persent_list)
-    para = {}
-    para['persent'] = persent_list
+    para = {'persent': persent_list}
     if first_persent==np.nan:
         score = max(first_persent-0.5,0)/0.5
         if score!=0:
@@ -147,7 +138,7 @@ def cal_Attribution(breakdown:VectorStr,measures:VectorStr,subDataSource:object,
         score = 0
     return score,para
 
-def cal_OutstandingNo1(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_OutstandingNo1(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     persent_list = groupData[measures[0]].values
@@ -156,8 +147,7 @@ def cal_OutstandingNo1(breakdown:VectorStr,measures:VectorStr,subDataSource:obje
     ydata = arg_list
     ydata = ydata[ydata>0]
     xdata = np.array(list(range(len(ydata))))+1
-    para = {}
-    para['persent'] = ydata
+    para = {'persent': ydata}
     if len(ydata)<=2:
         score = 0
     else:
@@ -169,7 +159,7 @@ def cal_OutstandingNo1(breakdown:VectorStr,measures:VectorStr,subDataSource:obje
         para['key'] = groupData.index[arg_index[0]]
     return score,para
 
-def cal_OutstandingNo2(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_OutstandingNo2(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     persent_list = groupData[measures[0]].values
@@ -178,8 +168,7 @@ def cal_OutstandingNo2(breakdown:VectorStr,measures:VectorStr,subDataSource:obje
     ydata = arg_list
     ydata = ydata[ydata>0]
     xdata = np.array(list(range(len(ydata))))+1
-    para = {}
-    para['persent'] = ydata
+    para = {'persent': ydata}
     if len(ydata)<=3:
         score = 0
     else:
@@ -191,7 +180,7 @@ def cal_OutstandingNo2(breakdown:VectorStr,measures:VectorStr,subDataSource:obje
         para['key'] = groupData.index[arg_index[0]]
     return score,para
 
-def cal_OutstandingLast(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_OutstandingLast(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     persent_list = groupData[measures[0]].values
@@ -200,8 +189,7 @@ def cal_OutstandingLast(breakdown:VectorStr,measures:VectorStr,subDataSource:obj
     ydata = arg_list
     ydata = -ydata[ydata<0]
     xdata = np.array(list(range(len(ydata))))+1
-    para = {}
-    para['persent'] = -ydata
+    para = {'persent': -ydata}
     if len(ydata)<=2:
         score = 0
     else:
@@ -213,13 +201,12 @@ def cal_OutstandingLast(breakdown:VectorStr,measures:VectorStr,subDataSource:obj
         para['key'] = groupData.index[arg_index[0]]
     return score,para
 
-def cal_Evenness(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_Evenness(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     persent_list = groupData[measures[0]].values
     std = np.std(persent_list)
-    para = {}
-    para['persent'] = persent_list
+    para = {'persent': persent_list}
     if std==0:
         score = 1
     else:
@@ -230,14 +217,12 @@ def cal_Evenness(breakdown:VectorStr,measures:VectorStr,subDataSource:object,agg
         para['explain'] = explain
     return score,para
 
-def cal_ChangePoint(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,rangeN:int,langType:str)->Tuple[float,dict]:
+def cal_ChangePoint(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,rangeN:int,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     timelabel = groupData.index
     timeseries = np.squeeze(groupData[measures[0]].values)
-    para = {}
-    para['timelabel']=timelabel
-    para['timeseries']=timeseries
+    para = {'timelabel': timelabel, 'timeseries': timeseries}
     if len(timeseries)>rangeN*2:
         Y_left = np.array([np.sum(timeseries[i-rangeN:i])/rangeN for i in range(rangeN,len(timeseries)-rangeN+1)])
         Y_right = np.array([np.sum(timeseries[i:i+rangeN])/rangeN for i in range(rangeN,len(timeseries)-rangeN+1)])
@@ -268,14 +253,12 @@ def cal_ChangePoint(breakdown:VectorStr,measures:VectorStr,subDataSource:object,
         score = 0
     return score,para
 
-def cal_Outlier(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_Outlier(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     timelabel = groupData.index
     timeseries = np.squeeze(groupData[measures[0]].values)
-    para = {}
-    para['timelabel'] = timelabel
-    para['timeseries'] = timeseries
+    para = {'timelabel': timelabel, 'timeseries': timeseries}
     if np.std(timeseries)>0:
         p_list = norm.cdf(timeseries,np.mean(timeseries),np.std(timeseries)**2)
         score = max(0.05-p_list.min(),0)/0.05
@@ -289,22 +272,42 @@ def cal_Outlier(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggr
         para['explain'] = explain
     return score,para
 
-def cal_Seasonality(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_Seasonality(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-1 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
     timelabel = groupData.index
     timeseries = np.squeeze(groupData[measures[0]].values)
     time = pd.to_datetime(timelabel)
-    winter = np.array([timeseries[i] for i in range(len(time)) if time[i].month in set([12,1,2])])
-    spring = np.array([timeseries[i] for i in range(len(time)) if time[i].month in set([3,4,5])])
-    summer = np.array([timeseries[i] for i in range(len(time)) if time[i].month in set([6,7,8])])
-    autumn = np.array([timeseries[i] for i in range(len(time)) if time[i].month in set([9,10,11])])
-    para = {}
-    para['timelabel'] = timelabel
-    para['timeseries'] = timeseries
-    if len(winter)!=0 or len(spring)!=0 or len(summer)!=0 or len(summer)!=0:
-        season = np.array([i for i in winter-np.mean(winter)]+[i for i in spring-np.mean(spring)]+\
-                          [i for i in summer-np.mean(summer)]+[i for i in autumn-np.mean(autumn)])
+    winter = np.array(
+        [
+            timeseries[i]
+            for i in range(len(time))
+            if time[i].month in {12, 1, 2}
+        ]
+    )
+    spring = np.array(
+        [timeseries[i] for i in range(len(time)) if time[i].month in {3, 4, 5}]
+    )
+    summer = np.array(
+        [timeseries[i] for i in range(len(time)) if time[i].month in {6, 7, 8}]
+    )
+    autumn = np.array(
+        [
+            timeseries[i]
+            for i in range(len(time))
+            if time[i].month in {9, 10, 11}
+        ]
+    )
+    para = {'timelabel': timelabel, 'timeseries': timeseries}
+    if len(winter) != 0 or len(spring) != 0 or len(summer) != 0:
+        season = np.array(
+            (
+                list(winter - np.mean(winter))
+                + list(spring - np.mean(spring))
+                + list(summer - np.mean(summer))
+            )
+            + list(autumn - np.mean(autumn))
+        )
         ttest,pval = ttest_rel(season,timeseries-np.mean(timeseries))
         score = 1-pval
         score = np.where(np.isnan(score),0,score)
@@ -369,9 +372,9 @@ def cal_HeteroscedasticityV2(breakdown:VectorStr,measures:VectorStr,subDataSourc
         para['explain'] = explain
     return score,para
 
-def cal_SimpsonParadoxV1(measures:VectorStr,subDataSource:object,langType:str)->Tuple[float,dict]:
+def cal_SimpsonParadoxV1(measures:VectorStr,subDataSource:object,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
-    whitened = whiten(subDataSource[measures[0:2]])
+    whitened = whiten(subDataSource[measures[:2]])
     if np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
         score = 0
         para = {}
@@ -410,63 +413,61 @@ def cal_SimpsonParadoxV1(measures:VectorStr,subDataSource:object,langType:str)->
             para['explain'] = explain
     return score,para
 
-def cal_SimpsonParadoxV2(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_SimpsonParadoxV2(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
-    whitened = whiten(np.squeeze(groupData[measures[0:2]].values))
+    whitened = whiten(np.squeeze(groupData[measures[:2]].values))
     if len(groupData)<2:
         score = 0
         para = {}
+    elif np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
+        score = 0
+        para = {}
     else:
-        if np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
-            score = 0
-            para = {}
+        y = whitened[:,1]
+        x = whitened[:,0]
+        whitened[:,0] = (whitened[:,0]-whitened[:,0].min())/(whitened[:,0].max()-whitened[:,0].min())
+        whitened[:,1] = (whitened[:,1]-whitened[:,1].min())/(whitened[:,1].max()-whitened[:,1].min())
+        clustering = DBSCAN(eps=whitened.max()/20, min_samples=1).fit(whitened)
+        label = clustering.labels_
+        label_list = [[j for j in range(len(label)) if label[j]==i] for i in list(set(label))]
+        para = {
+            'labelSet':list(set(clustering.labels_)),
+            'label':label,
+            'x':x,
+            'y':y
+        }
+        if np.sum([len(i)>=3 for i in label_list])>=3 and np.std(x)>0:
+            label_list_used = [i for i in label_list if len(i)>=3]
+            slope, intercept, r, p, se = linregress(x, y)
+            para['slope'] = slope
+            para['intercept'] = intercept
+            slope_list = []
+            intercept_list = []
+            for i in label_list:
+                if len(i)>=3 and np.std(x[i])>0:
+                    k, b, r, p, se = linregress(x[i], y[i])
+                    slope_list.append(k)
+                    intercept_list.append(b)
+            score = (1 - min(1,np.std(slope_list)/0.1))*min(1,np.abs(np.mean(slope_list)-slope)/0.15)
         else:
-            x = whitened[:,0]
-            y = whitened[:,1]
-            whitened[:,0] = (whitened[:,0]-whitened[:,0].min())/(whitened[:,0].max()-whitened[:,0].min())
-            whitened[:,1] = (whitened[:,1]-whitened[:,1].min())/(whitened[:,1].max()-whitened[:,1].min())
-            clustering = DBSCAN(eps=whitened.max()/20, min_samples=1).fit(whitened)
-            label = clustering.labels_
-            label_list = [[j for j in range(len(label)) if label[j]==i] for i in list(set(label))]
-            para = {
-                'labelSet':list(set(clustering.labels_)),
-                'label':label,
-                'x':x,
-                'y':y
-            }
-            if np.sum([len(i)>=3 for i in label_list])>=3 and np.std(x)>0:
-                label_list_used = [i for i in label_list if len(i)>=3]
-                slope, intercept, r, p, se = linregress(x, y)
-                para['slope'] = slope
-                para['intercept'] = intercept
-                slope_list = []
-                intercept_list = []
-                for i in label_list:
-                    if len(i)>=3 and np.std(x[i])>0:
-                        k, b, r, p, se = linregress(x[i], y[i])
-                        slope_list.append(k)
-                        intercept_list.append(b)
-                score = (1 - min(1,np.std(slope_list)/0.1))*min(1,np.abs(np.mean(slope_list)-slope)/0.15)
-            else:
-                score = 0
-            if score>0:
-                explain = explain_SimpsonParadoxV2(langType,measures[1],measures[0],aggrType,breakdown[0])
-                # explain = measures[1]+' for '+measures[0]+' shows simpson paradox after '+aggrType+' with '+breakdown[0]
-                para['explain'] = explain
+            score = 0
+        if score>0:
+            explain = explain_SimpsonParadoxV2(langType,measures[1],measures[0],aggrType,breakdown[0])
+            # explain = measures[1]+' for '+measures[0]+' shows simpson paradox after '+aggrType+' with '+breakdown[0]
+            para['explain'] = explain
     return score,para
 
 def cal_SimpsonParadoxV3(dimensions:VectorStr,breakdown:VectorStr,measures:VectorStr,\
-                         subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+                         subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
-    whitened = whiten(subDataSource[measures[0:2]])
+    whitened = whiten(subDataSource[measures[:2]])
+    score = 0
     if np.std(whitened[:,0])==0 or np.std(whitened[:,1])==0:
-        score = 0
         para = {}
     else:
         x = whitened[:,0]
         y = whitened[:,1]
-        score = 0
         label = []
         labelSet = []
         for d in dimensions:
@@ -492,10 +493,10 @@ def cal_SimpsonParadoxV3(dimensions:VectorStr,breakdown:VectorStr,measures:Vecto
             para['explain'] = explain
     return score,para
 
-def cal_NolinearrelationshipV1(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str)->Tuple[float,dict]:
+def cal_NolinearrelationshipV1(breakdown:VectorStr,measures:VectorStr,subDataSource:object,aggrType:str,langType:str) -> Tuple[float,dict]:
     # measures-2 measures
     groupData,aggr_mark = func_aggr(subDataSource,breakdown,aggrType)
-    timeseries = np.squeeze(groupData[measures[0:2]].values)
+    timeseries = np.squeeze(groupData[measures[:2]].values)
     x = timeseries[:,0]
     y = timeseries[:,1]
     if np.std(x)>0:
@@ -559,9 +560,7 @@ def explain_2DClustering(langType,measure0,measure1,aggr_mark,aggrType,breakdown
         if aggr_mark:
             explain+' after '+aggrType+' with '+breakdown[0]
     if langType=='cn':
-        explain = ''
-        if aggr_mark:
-            explain = '以'+breakdown[0]+'求'+aggrType+'的聚合后，'
+        explain = '以'+breakdown[0]+'求'+aggrType+'的聚合后，' if aggr_mark else ''
         explain = explain+measure0+'与'+measure1+'之间存在较好的聚类'
     return explain
 
@@ -571,9 +570,7 @@ def explain_CrossMeasureCorrelation(langType,measure0,measure1,aggr_mark,aggrTyp
         if aggr_mark:
             explain = explain+' after '+aggrType+' with '+breakdown[0]
     if langType=='cn':
-        explain = ''
-        if aggr_mark:
-            explain = '以'+breakdown[0]+'求'+aggrType+'的聚合后，'
+        explain = '以'+breakdown[0]+'求'+aggrType+'的聚合后，' if aggr_mark else ''
         explain = explain+measure0+'与'+measure1+'之间存在相关性'
     return explain
 
@@ -621,22 +618,27 @@ def explain_Evenness(langType,measure0,aggrType,breakdown):
 
 def explain_ChangePoint(langType,ChangePointMean,ChangePointSlope):
     explain = ''
-    if langType=='en':
-        if len(ChangePointMean)>0:
-            explain = 'There is change point of mean in '+','.join((str(x) for x in ChangePointMean))
-            if len(ChangePointSlope)>0:
-                explain = explain+' and change point of slope in '+','.join((str(x) for x in ChangePointSlope))
-        else:
-            if len(ChangePointSlope)>0:
-                explain = 'There is change point of slope in '+','.join((str(x) for x in ChangePointSlope))
-    if langType=='cn':
+    if langType == 'cn':
         if len(ChangePointMean)>0:
             explain = '数据在'+','.join((str(x) for x in ChangePointMean))+'有突变'
             if len(ChangePointSlope)>0:
-                explain = explain+'且其斜率在'+','.join((str(x) for x in ChangePointSlope))+'有突变'
-        else:
+                explain = (
+                    f'{explain}且其斜率在'
+                    + ','.join((str(x) for x in ChangePointSlope))
+                    + '有突变'
+                )
+        elif len(ChangePointSlope)>0:
+            explain = '数据的斜率在'+','.join((str(x) for x in ChangePointSlope))+'有突变'
+    elif langType == 'en':
+        if len(ChangePointMean)>0:
+            explain = 'There is change point of mean in '+','.join((str(x) for x in ChangePointMean))
             if len(ChangePointSlope)>0:
-                explain = '数据的斜率在'+','.join((str(x) for x in ChangePointSlope))+'有突变'
+                explain = (
+                    f'{explain} and change point of slope in '
+                    + ','.join((str(x) for x in ChangePointSlope))
+                )
+        elif len(ChangePointSlope)>0:
+            explain = 'There is change point of slope in '+','.join((str(x) for x in ChangePointSlope))
     return explain
 
 def explain_Outlier(langType,measure0,aggrType,breakdown):
@@ -710,26 +712,70 @@ def explain_NolinearrelationshipV1(langType,measure0,measure1,aggrType,breakdown
 
 def explain_scagnostics(langType,measure0,measure1):
     explain_list = []
-    if langType=='en':
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Outlying')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Skewed')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Sparse')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Clumpy')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Striated')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Convex')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Skinny')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Stringy')
-        explain_list.append('The scatterplot between '+measure0+' and '+measure1+' is Monotonic')
-    if langType=='cn':
-        explain_list.append(measure0+'和'+measure1+'的散点图是离散的')
-        explain_list.append(measure0+'和'+measure1+'的散点图中距离的分布是倾斜的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是稀疏的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是结块的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是条纹的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是凹的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是瘦的')
-        explain_list.append(measure0+'和'+measure1+'的散点图的主干是狭长的')
-        explain_list.append(measure0+'和'+measure1+'的散点图是单调的')
+    if langType == 'cn':
+        explain_list.extend(
+            (
+                measure0 + '和' + measure1 + '的散点图是离散的',
+                measure0 + '和' + measure1 + '的散点图中距离的分布是倾斜的',
+                measure0 + '和' + measure1 + '的散点图是稀疏的',
+                measure0 + '和' + measure1 + '的散点图是结块的',
+                measure0 + '和' + measure1 + '的散点图是条纹的',
+                measure0 + '和' + measure1 + '的散点图是凹的',
+                measure0 + '和' + measure1 + '的散点图是瘦的',
+                measure0 + '和' + measure1 + '的散点图的主干是狭长的',
+                measure0 + '和' + measure1 + '的散点图是单调的',
+            )
+        )
+    elif langType == 'en':
+        explain_list.extend(
+            (
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Outlying',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Skewed',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Sparse',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Clumpy',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Striated',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Convex',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Skinny',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Stringy',
+                'The scatterplot between '
+                + measure0
+                + ' and '
+                + measure1
+                + ' is Monotonic',
+            )
+        )
     return explain_list
 
 def insight_check(fields:object,dataSource:object,check_list:VectorStr=None,breakdown:VectorStr=None,\

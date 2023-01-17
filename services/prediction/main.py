@@ -26,9 +26,9 @@ def controlSplitTrainTest (X, y, split_states: 'list[int]'):
     y_test = y.take(test_indices, axis=0)
     return X_train, X_test, y_train, y_test
 
-def mockSplitIndices (size: int, ratio: float):
+def mockSplitIndices(size: int, ratio: float):
     indices = []
-    for i in range(size):
+    for _ in range(size):
         if random.random() > ratio:
             indices.append(1)
         else:
@@ -57,10 +57,11 @@ def runClassificationModel():
             trainTestSplitIndices = dataset['trainTestSplitIndices']
         else:
             trainTestSplitIndices = mockSplitIndices(len(data), 0.2)
-        testset_indices = []
-        for i in range(len(trainTestSplitIndices)):
-            if trainTestSplitIndices[i] == 0:
-                testset_indices.append(i)
+        testset_indices = [
+            i
+            for i in range(len(trainTestSplitIndices))
+            if trainTestSplitIndices[i] == 0
+        ]
         X, y, headers = makeTrainingData(data=data, fields=fields, features=features, target=targets[0])
         X_train, X_test, y_train, y_test = controlSplitTrainTest(X, y, trainTestSplitIndices)
         score = 0
@@ -71,9 +72,7 @@ def runClassificationModel():
             score, diffs = regression(X_train, X_test, y_train, y_test, headers, algorithm)
         if len(diffs) != len(testset_indices):
             print('[warning] diffs and testset_indices have different lengths')
-        result = []
-        for i in range(len(diffs)):
-            result.append([testset_indices[i], diffs[i]])
+        result = [[testset_indices[i], diffs[i]] for i in range(len(diffs))]
         return {
             "success": True,
             "data": {

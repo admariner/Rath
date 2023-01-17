@@ -88,8 +88,8 @@ def get_schema_list():
 def get_table_list():
     try:
         props: dict = json.loads(request.data)
-        database = props.get('db', None)
-        schema = props.get('schema', None)
+        database = props.get('db')
+        schema = props.get('schema')
         connect_id = props['sourceId']
         uri = get_uri(connect_id)
         source_type = get_source_type(connect_id)

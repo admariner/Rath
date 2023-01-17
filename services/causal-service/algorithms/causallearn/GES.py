@@ -46,8 +46,10 @@ class GES(AlgoInterface):
     def calc(self, params: Optional[ParamType] = ParamType(), focusedFields: List[str] = [], bgKnowledgesPag: Optional[List[common.BgKnowledgePag]] = [], **kwargs):
         array = self.selectArray(focusedFields=focusedFields, params=params)
         common.checkLinearCorr(array)
-        self.Record = ges(array, score_func=params.score_func, maxP=params.maxP if params.maxP else None)
-    
+        self.Record = ges(
+            array, score_func=params.score_func, maxP=params.maxP or None
+        )
+
         l = self.Record['G'].graph.tolist()
         return {
             'data': l,

@@ -18,8 +18,7 @@ def makeTrainingData(data, fields, features, target):
                 encoder = OneHotEncoder()
                 res = encoder.fit_transform(values)
                 X = np.concatenate((X, res.toarray()), axis=1)
-                for v in encoder.categories_[0]:
-                    headers.append(field['name'] + '_' + v)
+                headers.extend(field['name'] + '_' + v for v in encoder.categories_[0])
                 continue
             else:
                 encoder = OrdinalEncoder()
