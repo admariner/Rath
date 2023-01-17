@@ -9,24 +9,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field, Extra
 
-if False:
-    class ServiceSchemaRequest(BaseModel):
-        noting: Optional[str] = ""
-
-    class DataTypeEnum(Enum):
-        _number = 'number'
-        _string = 'string'
-        _time = 'time'
-        _boolean = 'boolean'
-        
-    class RenderTypeEnum(Enum):
-        _dropdown = 'dropdown'
-        _slider = 'slider'
-        _text = 'text'
-        _toggle = 'toggle'
-        _radio = 'radio'
-        _checkbox = 'checkbox'
-
 class ServiceSchemaItemOption(BaseModel):
     text: str
     key: Union[int, str]
@@ -38,7 +20,7 @@ class ServiceSchemaItem(BaseModel):
     renderType: str
     description: Optional[str]
     defaultValue: Optional[tp.Any]
-    
+
     range: Optional[Union[Tuple[float, float], Tuple[int, int]]]
     step: Optional[Union[float, int]]
     options: Optional[List[ServiceSchemaItemOption]]
@@ -48,7 +30,7 @@ class ServiceSchemaResponse(BaseModel):
     items: List[ServiceSchemaItem]
     description: Optional[tp.Any]
     message: Optional[tp.Any]
-    
+
 IRow = Dict[str, Union[int, float, str]]
 IFieldMeta = Dict[str, object]
 

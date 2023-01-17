@@ -92,15 +92,15 @@ def checkLinearCorr(array: np.ndarray):
     for i in range(8):
         if np.linalg.matrix_rank(array) < array.shape[1]:
             U, s, VT = np.linalg.svd(array)
-            print("================checkLinearCorr:{}".format(i))
+            print(f"================checkLinearCorr:{i}")
             print(U, s, VT, sep='\n')
             # raise Exception("The input array is linear correlated, some fields should be unselected.\n[to be optimized]")
             # array *= (1 + np.random.randn(*array.shape)*1e-3)
             # array *= (1 + np.random.randn(*array.shape) * 1e-3)
             print("The input array is linear correlated, some fields should be unselected.\n[to be optimized]", file=sys.stderr)
-            # if np.abs(s[-1] / s[0]) < 1e-4:
-            #     print("CheckLinearCorr", U, s, VT)
-            #     raise Exception("The input array is linear correlated, some fields should be unselected")
+                    # if np.abs(s[-1] / s[0]) < 1e-4:
+                    #     print("CheckLinearCorr", U, s, VT)
+                    #     raise Exception("The input array is linear correlated, some fields should be unselected")
         else:
             break
 
@@ -143,11 +143,11 @@ def encodeCat(origin: pd.Series, fact: pd.Series, encodeType: str) -> pd.DataFra
     #         v += np.random.randn(v.size)
     #         df = pd.concat([df, v], axis=1)
     #     return df
-    if encodeType == 'lex': # encodeType.lex:
+    if encodeType == 'lex':
         # print('lex', origin.rank(method="min"), sep='\n')
         # return pd.DataFrame(data=pd.Series(origin.rank(method="min"), name=str(origin.name))+0.0)
         return pd.DataFrame(data=pd.Series(origin.rank(method="max"), name=str(origin.name))) # +1e-3*np.random.randn(origin.size))
-    elif encodeType == 'one-hot': # encodeType.oneHot:
+    elif encodeType == 'one-hot':
         if fact.max() >= 64:
             raise Exception("too many values for one-hot encoding")
         code = pd.get_dummies(origin)
@@ -173,6 +173,8 @@ def encodeCat(origin: pd.Series, fact: pd.Series, encodeType: str) -> pd.DataFra
         for v in code.columns:
             code = code.assign(**{f"{x.name}.[{str(v)}]": code[v].values}).drop(columns=[v])
         return code
+    elif encodeType == 'random':
+        raise Exception("not implemented")
     elif encodeType == 'topk-with-noise':
         """
         topk-with-noise: merge categories with frequency less than 5 or frequency of the k-th most frequent value together.
@@ -181,30 +183,25 @@ def encodeCat(origin: pd.Series, fact: pd.Series, encodeType: str) -> pd.DataFra
         k, threshold = 16, 5
         noise_type = 0  # 0: kth, 1: by threshold
         v_cnt = len(cnt)
-        if noise_type == 0:
-            if v_cnt <= k:
-                code = pd.Series(range(v_cnt))
-            else:
-                code = pd.Series([*range(k-1), *([k-1] * (v_cnt + 1 - k))])
-            # print("code", code)
-            code_map = pd.DataFrame({'value': cnt.index, 'cnt': cnt.to_numpy(), 'code': code}).set_index('value')
-            return pd.DataFrame({origin.name: code_map.loc[origin.values]['code'].values})
-        else:
+        if noise_type != 0:
             raise Exception("not implemented")
-    elif encodeType == 'random':
-        raise Exception("not implemented")
+        code = (
+            pd.Series(range(v_cnt))
+            if v_cnt <= k
+            else pd.Series([*range(k - 1), *([k - 1] * (v_cnt + 1 - k))])
+        )
+        # print("code", code)
+        code_map = pd.DataFrame({'value': cnt.index, 'cnt': cnt.to_numpy(), 'code': code}).set_index('value')
+        return pd.DataFrame({origin.name: code_map.loc[origin.values]['code'].values})
     return pd.DataFrame(fact)
 
 def encodeQuant(x: pd.Series, encodeType: str) -> pd.DataFrame:
     n, eps = 16, 1e-5
-    if encodeType == 'bin': # encodeType.bin:
+    if encodeType == 'bin':
         width = x.max() - x.min()
         if width == 0: return pd.DataFrame(x)
         res = pd.Series( (x - x.min()) * (n - eps) * (1 / width), dtype=np.int32, name=x.name) * (width / (n - eps))
         return pd.DataFrame(res)
-    elif encodeType == 'order': # encodeType.order:
-        x = pd.Series(x.factorize(sort=True)[0], name=x.name)
-        return x
     elif encodeType == 'binned-order':
         order = pd.Series(x.factorize(sort=True)[0])
         len = x.size
@@ -212,7 +209,10 @@ def encodeQuant(x: pd.Series, encodeType: str) -> pd.DataFrame:
     elif encodeType == 'cnt-bin':
         group, cut_bin = pd.qcut(x, q=n, retbins=True)
         return pd.Series(((cut_bin[:-1] + cut_bin[1:]) * .5)[group], name=x.name)
-        
+
+    elif encodeType == 'order':
+        x = pd.Series(x.factorize(sort=True)[0], name=x.name)
+        return x
     return pd.DataFrame(x)
 
 def trans(df: pd.DataFrame, fields: List[IFieldMeta], params: OptionalParams):
@@ -239,9 +239,15 @@ def trans(df: pd.DataFrame, fields: List[IFieldMeta], params: OptionalParams):
                     res.drop(columns=[f.fid])
                 # res = pd.concat([res, newcode], axis=1)
                 res.loc[:, newcode.columns] = newcode
-                for col in list(newcode.columns):
-                    res_fields.append(IFieldMeta(fid=col, name=f.name+(col.replace(f.fid, '', 1)), semanticType='ordinal'))
-                # print(df.shape, res.shape)
+                res_fields.extend(
+                    IFieldMeta(
+                        fid=col,
+                        name=f.name + (col.replace(f.fid, '', 1)),
+                        semanticType='ordinal',
+                    )
+                    for col in list(newcode.columns)
+                )
+                            # print(df.shape, res.shape)
         elif f.semanticType == 'temporal':
             if df[f.fid].dtype in [np.dtype('O'), object, str, pd.CategoricalDtype]:
                 code = (pd.to_datetime(df[f.fid]) - pd.Timestamp("1970-01-01")) // pd.Timedelta('1s')
@@ -253,10 +259,6 @@ def trans(df: pd.DataFrame, fields: List[IFieldMeta], params: OptionalParams):
                     res_fields.append(f)
                 else:
                     res.drop(columns=[f.fid])
-                for col in list(newcode.columns):
-                    res_fields.append(IFieldMeta(fid=col, name=f.name+(col.replace(f.fid, '', 1)), semanticType='ordinal'))
-                # res = pd.concat([res, newcode], axis=1)
-                res.loc[:, newcode.columns] = newcode
             else:
                 newcode = encodeQuant(df[f.fid], params.quantEncodeType)
                 # print("newcode-other", newcode, df[f.fid], sep='\n')
@@ -264,10 +266,16 @@ def trans(df: pd.DataFrame, fields: List[IFieldMeta], params: OptionalParams):
                     res_fields.append(f)
                 else:
                     res.drop(columns=[f.fid])
-                # res = pd.concat([res, newcode], axis=1)
-                for col in list(newcode.columns):
-                    res_fields.append(IFieldMeta(fid=col, name=f.name+(col.replace(f.fid, '', 1)), semanticType='ordinal'))
-                res.loc[:, newcode.columns] = newcode
+            res_fields.extend(
+                IFieldMeta(
+                    fid=col,
+                    name=f.name + (col.replace(f.fid, '', 1)),
+                    semanticType='ordinal',
+                )
+                for col in list(newcode.columns)
+            )
+            # res = pd.concat([res, newcode], axis=1)
+            res.loc[:, newcode.columns] = newcode
         elif f.semanticType in ['quantitative', 'ordinal']:
             newcode = encodeQuant(df[f.fid], params.quantEncodeType)
             # print("newcode-other", newcode, df[f.fid], sep='\n')
@@ -278,8 +286,14 @@ def trans(df: pd.DataFrame, fields: List[IFieldMeta], params: OptionalParams):
             # print("newcode======", res, newcode, res_fields, f.fid, res[f.fid], sep='\n')
             # res = pd.concat([res, newcode], axis=1)
             res.loc[:, newcode.columns] = newcode
-            for col in list(newcode.columns):
-                res_fields.append(IFieldMeta(fid=col, name=f.name+(col.replace(f.fid, '', 1)), semanticType='ordinal'))
+            res_fields.extend(
+                IFieldMeta(
+                    fid=col,
+                    name=f.name + (col.replace(f.fid, '', 1)),
+                    semanticType='ordinal',
+                )
+                for col in list(newcode.columns)
+            )
         else:
             res_fields.append(f)
     # print("res, ", res, res_fields)
@@ -364,9 +378,12 @@ class AlgoInterface:
     def transFocusedFields(self, focusedFields):
         res = []
         for ff in focusedFields:
-            for f in self.fields:
-                if (f.fid.startswith(ff + '.[') and  f.fid.endswith(']')) or f.fid == ff:
-                    res.append(f.fid)
+            res.extend(
+                f.fid
+                for f in self.fields
+                if (f.fid.startswith(ff + '.[') and f.fid.endswith(']'))
+                or f.fid == ff
+            )
         return res
     
     def selectArray(self, focusedFields: List[str] = [], params: OptionalParams = OptionalParams()) -> np.ndarray:

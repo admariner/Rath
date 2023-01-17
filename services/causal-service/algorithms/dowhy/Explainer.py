@@ -48,7 +48,7 @@ class Explainer(common.AlgoInterface):
             if params.estimate_effect_method == 'backdoor.distance_matching' and np.unique(self.data[f].values).size == 2:
                 self.data = self.data.assign(**{f: self.data[f] != self.data[f].values[0]})
         print(self.data[f])
-        
+
         self.model = dowhy.CausalModel(
             data=self.data,
             treatment=[params.treatment],
@@ -57,16 +57,19 @@ class Explainer(common.AlgoInterface):
         )
         self.model.view_model()
         print(self.model)
-        
-        res = {}
-        res['identified_estimand'] = self.model.identify_effect(proceed_when_unidentifiable=True)
+
+        res = {
+            'identified_estimand': self.model.identify_effect(
+                proceed_when_unidentifiable=True
+            )
+        }
         print(res['identified_estimand'], params.estimate_effect_method)
         res['causal_estimate'] = self.model.estimate_effect(res['identified_estimand'], method_name=params.estimate_effect_method, test_significance=True)
         # res['refute'] = self.model.refute_estimate(res['identified_estimand'], estimate=res['causal_estimate'], method_name="random_common_cause", show_progress_bar=True)
         print("res=")
         for k, v in res.items():
             print(k, v)
-        
+
         return {
             'data': [[]],
             'matrix': [[]],

@@ -18,16 +18,22 @@ def traverse_fields(dataSource,fields,check_list=None):
     traverse_return = []
     columns = []
     for i in range(2,min(len(fields['fid']),5)):
-        for j in combinations(list(fields['fid']),i):
-            columns.append(list(j))
+        columns.extend(list(j) for j in combinations(list(fields['fid']),i))
     select_columns = [columns[i] for i in range(len(columns)) if i%(np.floor(len(columns)/100))==0]
     for col in select_columns:
         # print(col)
         insight_dict,insight_input = insight_check(fields,dataSource.loc[:,col],check_list)
-        for d in insight_dict:
-            if insight_dict[d]['score']>0:
-                traverse_return.append({'type':d,'col':col,'insight_input':insight_input,'dict':insight_dict[d]})
-        # display_insight_dict(insight_dict,dataSource)
+        traverse_return.extend(
+            {
+                'type': d,
+                'col': col,
+                'insight_input': insight_input,
+                'dict': insight_dict[d],
+            }
+            for d in insight_dict
+            if insight_dict[d]['score'] > 0
+        )
+            # display_insight_dict(insight_dict,dataSource)
     return traverse_return
 
 def display_insight_dict(insight_dict,dataSource):

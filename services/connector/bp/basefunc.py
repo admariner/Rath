@@ -11,14 +11,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def athena_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -30,38 +29,26 @@ class basefunc:
     @staticmethod
     def athena_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('select * from ' + database + '.' + table + ' limit 500').keys()
+        metaRes = engine.execute(f'select * from {database}.{table} limit 500').keys()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData, "colIndex": i, "dataType": None}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def athena_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def athena_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # clickhouse
     @staticmethod
@@ -70,14 +57,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def clickhouse_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -89,38 +75,26 @@ class basefunc:
     @staticmethod
     def clickhouse_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('desc ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(f'desc {database}.{table}').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.name, "colIndex": i, "dataType": colData.type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def clickhouse_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def clickhouse_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # doris
     @staticmethod
@@ -129,14 +103,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def doris_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -148,38 +121,28 @@ class basefunc:
     @staticmethod
     def doris_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('show full columns from ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(
+            f'show full columns from {database}.{table}'
+        ).fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.name, "colIndex": i, "dataType": colData.type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def doris_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def doris_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # drill
     @staticmethod
@@ -188,14 +151,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def drill_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             meta = basefunc.drill_getmeta(uri=uri, database=database, schema=schema, table=row.TABLE_NAME)
@@ -206,38 +168,26 @@ class basefunc:
     @staticmethod
     def drill_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('desc ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(f'desc {database}.{table}').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.COLUMN_NAME, "colIndex": i, "dataType": colData.DATA_TYPE}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def drill_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def drill_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # druid
     @staticmethod
@@ -246,8 +196,7 @@ class basefunc:
         res = engine.execute('select SCHEMA_NAME from INFORMATION_SCHEMA.SCHEMATA ').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
@@ -268,36 +217,24 @@ class basefunc:
         metaRes = engine.execute(
             'select COLUMN_NAME, DATA_TYPE from INFORMATION_SCHEMA.COLUMNS where TABLE_SCHEMA = \'' + schema + '\' and  TABLE_NAME = \'' + table + '\'').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.COLUMN_NAME, "colIndex": i, "dataType": colData.DATA_TYPE}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def druid_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + schema + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {schema}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def druid_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # impala
     @staticmethod
@@ -306,14 +243,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def impala_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -325,75 +261,51 @@ class basefunc:
     @staticmethod
     def impala_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('desc ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(f'desc {database}.{table}').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.col_name, "colIndex": i, "dataType": colData.data_type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def impala_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def impala_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # kylin
     @staticmethod
     def kylin_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('select * from ' + schema + '.' + table + ' limit 500').keys()
+        metaRes = engine.execute(f'select * from {schema}.{table} limit 500').keys()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData, "colIndex": i, "dataType": None}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def kylin_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + schema + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {schema}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def kylin_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # mysql
     @staticmethod
@@ -402,14 +314,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def mysql_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -421,38 +332,26 @@ class basefunc:
     @staticmethod
     def mysql_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('desc ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(f'desc {database}.{table}').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.Field, "colIndex": i, "dataType": colData.Type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def mysql_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def mysql_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # oracle
     @staticmethod
@@ -497,36 +396,24 @@ class basefunc:
             '''.format(table, table)
         ).fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.column_name, "colIndex": i, "dataType": colData.data_type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def oracle_getdata(uri, database, table, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + table + ' where rownum <= ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {table} where rownum <= {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def oracle_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # postgres
     @staticmethod
@@ -535,8 +422,7 @@ class basefunc:
         res = engine.execute('select nspname from pg_catalog.pg_namespace').fetchall()
         schema_list = []
         for row in res:
-            for item in row:
-                schema_list.append(item)
+            schema_list.extend(iter(row))
         return schema_list
 
     @staticmethod
@@ -558,36 +444,24 @@ class basefunc:
         metaRes = engine.execute(
             'select column_name, data_type from information_schema.columns where table_schema= \'' + schema + '\' and table_name= \'' + table + '\'').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.column_name, "colIndex": i, "dataType": colData.data_type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def postgres_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + schema + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {schema}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def postgres_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # redshift
     @staticmethod
@@ -596,8 +470,7 @@ class basefunc:
         res = engine.execute('select nspname from pg_namespace').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
@@ -623,36 +496,24 @@ class basefunc:
             AND schemaname = '{1}'
         '''.format(table, database)).fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.column, "colIndex": i, "dataType": colData.type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def redshift_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def redshift_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # sparksql
     @staticmethod
@@ -661,14 +522,13 @@ class basefunc:
         res = engine.execute('SHOW DATABASES').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
     def sparksql_gettable(uri, database, schema):
         engine = create_engine(uri, echo=True)
-        res = engine.execute('SHOW TABLES FROM ' + database).fetchall()
+        res = engine.execute(f'SHOW TABLES FROM {database}').fetchall()
         table_list = []
         for row in res:
             for item in row:
@@ -680,38 +540,26 @@ class basefunc:
     @staticmethod
     def sparksql_getmeta(uri, database, table, schema):
         engine = create_engine(uri, echo=True)
-        metaRes = engine.execute('desc ' + database + '.' + table).fetchall()
+        metaRes = engine.execute(f'desc {database}.{table}').fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.col_name, "colIndex": i, "dataType": colData.data_type}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def sparksql_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
-        dataRes = engine.execute('select * from ' + database + '.' + table + ' limit ' + rows_num).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+        dataRes = engine.execute(
+            f'select * from {database}.{table} limit {rows_num}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def sparksql_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # sqlserver
     @staticmethod
@@ -720,8 +568,7 @@ class basefunc:
         res = engine.execute('SELECT name FROM sys.databases').fetchall()
         db_list = []
         for row in res:
-            for item in row:
-                db_list.append(item)
+            db_list.extend(iter(row))
         return db_list
 
     @staticmethod
@@ -730,8 +577,7 @@ class basefunc:
         res = engine.execute('SELECT name FROM {0}.sys.schemas'.format(db)).fetchall()
         schema_list = []
         for row in res:
-            for item in row:
-                schema_list.append(item)
+            schema_list.extend(iter(row))
         return schema_list
 
     @staticmethod
@@ -767,37 +613,24 @@ class basefunc:
             ORDER BY SO.name, SC.colorder
         '''.format(database, database, database, table)).fetchall()
         meta = []
-        i = 0
-        for colData in metaRes:
+        for i, colData in enumerate(metaRes):
             scores = {"key": colData.table_name, "colIndex": i, "dataType": colData.table_column}
             meta.append(scores)
-            i += 1
         return meta
 
     @staticmethod
     def sqlserver_getdata(uri, database, table, schema, rows_num):
         engine = create_engine(uri, echo=True)
         dataRes = engine.execute(
-            'select top ' + rows_num + ' * from ' + database + '.' + schema + '.' + table).fetchall()
-        data = []
-        for row in dataRes:
-            rows = []
-            for item in row:
-                rows.append(item)
-            data.append(rows)
-        return data
+            f'select top {rows_num} * from {database}.{schema}.{table}'
+        ).fetchall()
+        return [list(row) for row in dataRes]
 
     @staticmethod
     def sqlserver_getresult(uri, sql):
         engine = create_engine(uri, echo=True)
         res = engine.execute(sql).fetchall()
-        sql_result = []
-        for row in res:
-            rows = []
-            for item in row:
-                rows.append(item)
-            sql_result.append(rows)
-        return sql_result
+        return [list(row) for row in res]
 
     # # x
     # @staticmethod

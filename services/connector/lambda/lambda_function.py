@@ -2,7 +2,7 @@ import json
 from sqlalchemy import create_engine
 from basefunc import basefunc
 
-with open(rf"./env.json", 'rb') as env:
+with open("./env.json", 'rb') as env:
     json_load = json.load(env)
     connection_string = json_load['connection_string']
     database = json_load['database']
@@ -11,7 +11,7 @@ with open(rf"./env.json", 'rb') as env:
 
 # connect_id = "7f852663-1393-44bb-b376-d77beee28b91"
 def ping(event, context):
-    print("Received event: " + json.dumps(event, indent=2))
+    print(f"Received event: {json.dumps(event, indent=2)}")
     return {
         "success": True
     }
